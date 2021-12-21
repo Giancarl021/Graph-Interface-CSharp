@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using GraphInterface.Models;
-using GraphInterface.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -47,8 +46,6 @@ namespace GraphInterface
             }
 
             var request = new HttpRequestMessage(HttpMethod.Post, $"https://login.microsoftonline.com/{_credentials.TenantId}/oauth2/v2.0/token");
-
-            request.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
 
             request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
             {

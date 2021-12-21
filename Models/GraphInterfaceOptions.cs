@@ -10,8 +10,8 @@ namespace GraphInterface.Models
     public class GraphInterfaceOptions
     {
         public string Version { get; set; } = "v1.0";
-        public Func<GraphInterfaceCredentials, Task<GraphInterfaceAccessTokenResponse>> AuthenticationProvider { get; set; }
-        public ILogger Logger { get; set; }
+        public Func<GraphInterfaceCredentials, Task<GraphInterfaceAccessTokenResponse>> AuthenticationProvider { get; set; } = null;
+        public ILogger Logger { get; set; } = null;
         public HttpClient HttpClient { get; set; }
         public IGraphInterfaceCacheService<GraphInterfaceAccessTokenResponse> CacheService { get; set; }
 
