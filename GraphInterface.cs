@@ -146,7 +146,6 @@ namespace GraphInterface
             if (!response.IsSuccessStatusCode)
             {
                 _options.Logger.LogError("Failed to complete request");
-                _options.Logger.LogInformation(responseString);
                 string message = string.IsNullOrEmpty(responseString) ? "Unknown error" : responseString;
                 
                 throw new Exception($"Failed to complete request with Error {(int)response.StatusCode} - {response.StatusCode}: {message}");
