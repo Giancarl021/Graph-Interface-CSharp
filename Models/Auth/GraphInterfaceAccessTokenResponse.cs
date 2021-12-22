@@ -1,7 +1,8 @@
 using System;
+using GraphInterface.Services;
 using Newtonsoft.Json;
 
-namespace GraphInterface.Models
+namespace GraphInterface.Models.Auth
 {
     public class GraphInterfaceAccessTokenResponse
     {
@@ -10,8 +11,10 @@ namespace GraphInterface.Models
         [JsonProperty("refresh_token")]
         public string RefreshToken { get; set; }
         [JsonProperty("expires_in")]
+        [JsonConverter(typeof(TimeSpanJsonConverter))]
         public TimeSpan ExpiresIn { get; set; }
         [JsonProperty("ext_expires_in")]
+        [JsonConverter(typeof(TimeSpanJsonConverter))]
         public TimeSpan ExtExpiresIn { get; set; }
         [JsonProperty("expires_on")]
         public DateTime ExpiresOn { get; set; }

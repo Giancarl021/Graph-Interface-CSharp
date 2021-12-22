@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
-using GraphInterface.Models;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+
+using GraphInterface.Models.Auth;
+using GraphInterface.Models.Options;
 
 namespace GraphInterface
 {
@@ -12,10 +14,11 @@ namespace GraphInterface
     {
         private readonly GraphInterfaceCredentials _credentials;
         private readonly GraphInterfaceOptions _options;
+        private const string TOKEN_KEY = "INTERNAL::TOKEN_CACHE_KEY";
         public GraphInterfaceClient(GraphInterfaceCredentials credentials)
         {
             _credentials = credentials;
-            _options = GraphInterfaceOptions.GetDefault();
+            _options = new GraphInterfaceOptions();
             AssertHttpClientIsNotNull();
         }
         public GraphInterfaceClient(GraphInterfaceCredentials credentials, GraphInterfaceOptions options)
@@ -24,24 +27,30 @@ namespace GraphInterface
             _options = options;
             AssertHttpClientIsNotNull();
         }
-
         public async Task<string> GetAccessToken(GraphInterfaceAccessTokenOptions options)
         {
             if (options.UseCache)
             {
                 AssertCacheIsNotNull();
-                if (_options.CacheService.Has())
-                    return _options.CacheService.Get().AccessToken;
+                
+                if (_options.CacheService.Has(TOKEN_KEY))
+                {
+                    _options.Logger.LogDebug("Returning cached access token");
+                    return _options.CacheService.Get<GraphInterfaceAccessTokenResponse>(TOKEN_KEY).AccessToken;
+                }
             }
 
             if (_options.AuthenticationProvider != null)
             {
+                _options.Logger.LogDebug("Retrieving access token from custom authentication provider");
+
                 var customToken = await _options.AuthenticationProvider(_credentials);
                 if (options.UseCache)
                 {
-                    _options.CacheService.Set(customToken, customToken.ExpiresIn);
+                    _options.Logger.LogDebug("Caching access token");
+                    _options.CacheService.Set(TOKEN_KEY, customToken, customToken.ExpiresIn);
                 }
-
+                _options.Logger.LogDebug("Returning access token from custom authentication provider");
                 return customToken.AccessToken;
             }
 
@@ -55,25 +64,46 @@ namespace GraphInterface
                 { "scope", "https://graph.microsoft.com/.default" }
             });
 
+            _options.Logger.LogDebug("Requesting new access token");
             var response = await _options.HttpClient.SendAsync(request);
-            var content = JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
+            string responseString = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception(
-                    "Failed to get access token: " +
-                    JsonConvert.SerializeObject(content["error_description"] ?? content["error"] ?? "\"Unknown error\"")
-                );
+                _options.Logger.LogError("Failed to retrieve access token");
+                dynamic errorContent = string.IsNullOrEmpty(responseString) ? null : JsonConvert.DeserializeObject<dynamic>(responseString);
+                string message = (
+                        errorContent?["error_description"]?.Value ??
+                        errorContent?["error"]?.Value
+                    ) ?? "Unknown error";
+                
+                throw new Exception($"Failed to get access token with Error {(int)response.StatusCode} - {response.StatusCode}: {message}");
             }
 
-            var token = JObject.FromObject(content).ToObject(typeof(GraphInterfaceAccessTokenResponse));
+            var token = JsonConvert.DeserializeObject<GraphInterfaceAccessTokenResponse>(responseString);
 
             if (options.UseCache)
             {
-                _options.CacheService.Set(token, token.ExpiresIn);
+                _options.Logger.LogDebug("Caching access token");
+                _options.CacheService.Set(TOKEN_KEY, token, token.ExpiresIn);
             }
 
+            _options.Logger.LogDebug("Returning access token");
             return token.AccessToken;
+        }
+        public async Task<string> GetAccessToken()
+        {
+            return await GetAccessToken(new GraphInterfaceAccessTokenOptions());
+        }
+        public async Task<T> Unit<T>(string resource, GraphInterfaceUnitOptions options)
+        {
+            if (options.UseCache)
+            {
+
+            }
+            string token = await GetAccessToken();
+
+            throw new NotImplementedException();
         }
         private void AssertHttpClientIsNotNull()
         {

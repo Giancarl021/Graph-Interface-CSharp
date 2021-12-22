@@ -1,60 +1,67 @@
 using System;
+using System.Collections.Generic;
 using GraphInterface.Interfaces;
+using GraphInterface.Models.Helpers;
 
 namespace GraphInterface.Services
 {
-    public class GraphInterfaceMemoryCacheService<T> : IGraphInterfaceCacheService<T> where T : class
+    public class GraphInterfaceMemoryCacheService : IGraphInterfaceCacheService
     {
         private readonly TimeSpan _defaultExpirationTime;
-        private T _value = null;
-        private DateTime? _expiration;
+        private readonly Dictionary<string, GraphInterfaceMemoryCacheItem> _values;
 
         public GraphInterfaceMemoryCacheService(TimeSpan defaultExpirationTime)
         {
             _defaultExpirationTime = defaultExpirationTime;
+            _values = new Dictionary<string, GraphInterfaceMemoryCacheItem>();
         }
-        public GraphInterfaceMemoryCacheService()
+        public GraphInterfaceMemoryCacheService() : this(TimeSpan.FromHours(1)) {}
+        public void Expire(string key)
         {
-            _defaultExpirationTime = TimeSpan.FromHours(1);
-        }
-        public void Expire()
-        {
-            _value = null;
-            _expiration = null;
+            _values.Remove(key);
         }
 
-        public T Get()
+        public T Get<T>(string key) where T : class
         {
-            if (!Has())
+            if (!Has(key))
             {
                 throw new Exception("Cache data missing");
             }
 
-            return _value;
+            var item = _values[key];
+
+            if (item.Value.GetType() != typeof(T))
+            {
+                throw new Exception("Cache data type mismatch");
+            }
+
+            return item.Value as T;
         }
 
-        public bool Has()
+        public bool Has(string key)
         {
-            if (_value == null || _expiration == null) return false;
+            if (!_values.ContainsKey(key)) return false;
 
-            if (DateTime.Now >= _expiration.GetValueOrDefault())
+            if (DateTime.Now >= _values[key].Expiration)
             {
-                Expire();
+                Expire(key);
                 return false;
             }
 
             return true;
         }
 
-        public void Set(T value)
+        public void Set<T>(string key, T value) where T : class
         {
-            _value = value;
-            _expiration = DateTime.Now.Add(_defaultExpirationTime);
+            Set(key, value, _defaultExpirationTime);
         }
-        public void Set(T value, TimeSpan expiration)
+        public void Set<T>(string key, T value, TimeSpan expiration) where T : class
         {
-            _value = value;
-            _expiration = DateTime.Now.Add(expiration);
+            _values.Add(key, new GraphInterfaceMemoryCacheItem
+            {
+                Value = value,
+                Expiration = DateTime.Now.Add(expiration)
+            });
         }
     }
 }

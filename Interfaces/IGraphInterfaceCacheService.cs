@@ -2,12 +2,12 @@ using System;
 
 namespace GraphInterface.Interfaces
 {
-    public interface IGraphInterfaceCacheService<T> where T : class
+    public interface IGraphInterfaceCacheService
     {
-        public T Get();
-        public void Set(T value);
-        public void Set(T value, TimeSpan expiration);
-        public void Expire();
-        public bool Has();
+        public T Get<T>(string key) where T : class;
+        public void Set<T>(string key, T value) where T : class;
+        public void Set<T>(string key, T value, TimeSpan expiration) where T : class;
+        public void Expire(string key);
+        public bool Has(string key);
     }
 }
