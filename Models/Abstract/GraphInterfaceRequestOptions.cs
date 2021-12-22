@@ -8,6 +8,6 @@ namespace GraphInterface.Models.Abstract
         public bool UseCache { get; set; } = false;
         public HttpMethod Method { get; set; } = HttpMethod.Get;
         public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
-        public HttpContent Body { get; set; } = null;
+        public object Body { get; set; } = null;
     }
 }

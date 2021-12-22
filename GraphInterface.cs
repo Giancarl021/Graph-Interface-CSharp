@@ -8,6 +8,8 @@ using Newtonsoft.Json;
 using GraphInterface.Models.Auth;
 using GraphInterface.Models.Options;
 using GraphInterface.Services;
+using System.Net.Http.Headers;
+using System.Text;
 
 namespace GraphInterface
 {
@@ -15,17 +17,14 @@ namespace GraphInterface
     {
         private readonly GraphInterfaceCredentials _credentials;
         private readonly GraphInterfaceOptions _options;
+        private readonly string _endpoint;
         private const string TOKEN_KEY = "INTERNAL::TOKEN_CACHE_KEY";
-        public GraphInterfaceClient(GraphInterfaceCredentials credentials)
-        {
-            _credentials = credentials;
-            _options = new GraphInterfaceOptions();
-            AssertHttpClientIsNotNull();
-        }
+        public GraphInterfaceClient(GraphInterfaceCredentials credentials): this(credentials, new GraphInterfaceOptions()) {}
         public GraphInterfaceClient(GraphInterfaceCredentials credentials, GraphInterfaceOptions options)
         {
             _credentials = credentials;
             _options = options;
+            _endpoint = $"https://graph.microsoft.com/{options.Version}";
             AssertHttpClientIsNotNull();
         }
         public async Task<string> GetAccessToken(GraphInterfaceAccessTokenOptions options)
@@ -69,17 +68,7 @@ namespace GraphInterface
             var response = await _options.HttpClient.SendAsync(request);
             string responseString = await response.Content.ReadAsStringAsync();
 
-            if (!response.IsSuccessStatusCode)
-            {
-                _options.Logger.LogError("Failed to retrieve access token");
-                dynamic errorContent = string.IsNullOrEmpty(responseString) ? null : JsonConvert.DeserializeObject<dynamic>(responseString);
-                string message = (
-                        errorContent?["error_description"]?.Value ??
-                        errorContent?["error"]?.Value
-                    ) ?? "Unknown error";
-                
-                throw new Exception($"Failed to get access token with Error {(int)response.StatusCode} - {response.StatusCode}: {message}");
-            }
+            Catch(response, responseString);
 
             var token = JsonConvert.DeserializeObject<GraphInterfaceAccessTokenResponse>(responseString);
 
@@ -98,7 +87,7 @@ namespace GraphInterface
         }
         public async Task<T> Unit<T>(string resource, GraphInterfaceUnitOptions options) where T : class
         {
-            _options.Logger.LogDebug("Generating request hash key");
+            _options.Logger.LogDebug("Generating unit request hash key");
             string hash = GraphInterfaceRequestHasher.Hash(resource, options);
 
             if (options.UseCache)
@@ -107,18 +96,61 @@ namespace GraphInterface
                 
                 if (_options.CacheService.Has(hash))
                 {
-                    _options.Logger.LogDebug("Returning cached response");
+                    _options.Logger.LogDebug("Returning cached unit response");
                     return _options.CacheService.Get<T>(hash);
                 }
             }
 
+            var request = new HttpRequestMessage(options.Method, $"{_endpoint}/{resource}");
             string token = await GetAccessToken();
 
-            throw new NotImplementedException();
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            foreach (var item in options.Headers)
+            {
+                request.Headers.Add(item.Key, item.Value);
+            }
+
+            if (options.Body != null)
+            {
+                request.Content = new StringContent(
+                    JsonConvert.SerializeObject(options.Body),
+                    Encoding.UTF8,
+                    "application/json"
+                );
+            }
+
+            _options.Logger.LogDebug("Sending unit request");
+            var response = await _options.HttpClient.SendAsync(request);
+            string responseString = await response.Content.ReadAsStringAsync();
+
+            Catch(response, responseString);
+
+            T result = JsonConvert.DeserializeObject<T>(responseString);
+
+            if (options.UseCache)
+            {
+                _options.Logger.LogDebug("Caching unit response");
+                _options.CacheService.Set(hash, result);
+            }
+
+            _options.Logger.LogDebug("Returning unit response");
+            return result;
         }
         public async Task<T> Unit<T>(string resource) where T : class
         {
             return await Unit<T>(resource, new GraphInterfaceUnitOptions());
+        }
+        private void Catch(HttpResponseMessage response, string responseString)
+        {
+            if (!response.IsSuccessStatusCode)
+            {
+                _options.Logger.LogError("Failed to complete request");
+                _options.Logger.LogInformation(responseString);
+                string message = string.IsNullOrEmpty(responseString) ? "Unknown error" : responseString;
+                
+                throw new Exception($"Failed to complete request with Error {(int)response.StatusCode} - {response.StatusCode}: {message}");
+            }
         }
         private void AssertHttpClientIsNotNull()
         {
