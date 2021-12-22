@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 using GraphInterface.Models.Auth;
 using GraphInterface.Models.Options;
+using GraphInterface.Services;
 
 namespace GraphInterface
 {
@@ -95,15 +96,29 @@ namespace GraphInterface
         {
             return await GetAccessToken(new GraphInterfaceAccessTokenOptions());
         }
-        public async Task<T> Unit<T>(string resource, GraphInterfaceUnitOptions options)
+        public async Task<T> Unit<T>(string resource, GraphInterfaceUnitOptions options) where T : class
         {
+            _options.Logger.LogDebug("Generating request hash key");
+            string hash = GraphInterfaceRequestHasher.Hash(resource, options);
+
             if (options.UseCache)
             {
-
+                AssertCacheIsNotNull();
+                
+                if (_options.CacheService.Has(hash))
+                {
+                    _options.Logger.LogDebug("Returning cached response");
+                    return _options.CacheService.Get<T>(hash);
+                }
             }
+
             string token = await GetAccessToken();
 
             throw new NotImplementedException();
+        }
+        public async Task<T> Unit<T>(string resource) where T : class
+        {
+            return await Unit<T>(resource, new GraphInterfaceUnitOptions());
         }
         private void AssertHttpClientIsNotNull()
         {
