@@ -262,18 +262,6 @@ namespace GraphInterface
 
             var result = new Dictionary<string, T>();
 
-            
-
-            if (options.ParseMethod == GraphInterfaceParseMethod.Unit)
-            {
-
-            }
-            // List Method
-            // else
-            // {
-
-            // }
-
             return result;
         }
         private void Catch(HttpResponseMessage response, string responseString)

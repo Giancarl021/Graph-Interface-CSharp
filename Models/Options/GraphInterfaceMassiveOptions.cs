@@ -13,7 +13,6 @@ namespace GraphInterface.Options
         public uint Attempts { get; set; } = 3;
         public bool Parallel { get; set; } = true;
         public uint RequestsPerAttempt { get; set; } = 50;
-        public GraphInterfaceParseMethod ParseMethod { get; set; } = GraphInterfaceParseMethod.Unit;
         public GraphInterfaceMassiveOptions() : base() {}
         public GraphInterfaceMassiveOptions(IEnumerable<string> values) : base() {
             Values = new List<IEnumerable<string>>() { values };
