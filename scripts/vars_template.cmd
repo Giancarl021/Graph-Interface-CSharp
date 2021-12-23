@@ -1,4 +1,4 @@
-@REM Rename this file to "vars.cmd" and change the variables
+@REM Copy this file to "vars.cmd" and change the variables
 
 set PACKAGE=GraphInterface
 set VERSION=0.1.0
