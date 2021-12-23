@@ -3,11 +3,11 @@ using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
-using GraphInterface.Models.Auth;
+using GraphInterface.Auth;
 using GraphInterface.Interfaces;
 using GraphInterface.Services;
 
-namespace GraphInterface.Models.Options
+namespace GraphInterface.Options
 {
     public class GraphInterfaceOptions
     {

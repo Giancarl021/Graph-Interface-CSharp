@@ -1,4 +1,4 @@
-namespace GraphInterface.Models.Auth
+namespace GraphInterface.Auth
 {
     public class GraphInterfaceCredentials
     {

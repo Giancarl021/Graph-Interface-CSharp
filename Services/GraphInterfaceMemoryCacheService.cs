@@ -30,7 +30,10 @@ namespace GraphInterface.Services
 
             var item = _values[key];
 
-            if (item.Value.GetType() != typeof(T))
+            Type type = item.Value.GetType();
+            Type typeT = typeof(T);
+
+            if (type != typeT && !typeT.IsAssignableFrom(type))
             {
                 throw new Exception("Cache data type mismatch");
             }

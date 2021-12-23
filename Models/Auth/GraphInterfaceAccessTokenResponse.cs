@@ -2,7 +2,7 @@ using System;
 using GraphInterface.Services;
 using Newtonsoft.Json;
 
-namespace GraphInterface.Models.Auth
+namespace GraphInterface.Auth
 {
     public class GraphInterfaceAccessTokenResponse
     {

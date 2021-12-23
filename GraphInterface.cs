@@ -1,15 +1,17 @@
 ﻿using System;
+using System.Text;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-using GraphInterface.Models.Auth;
-using GraphInterface.Models.Options;
+using GraphInterface.Auth;
+using GraphInterface.Options;
 using GraphInterface.Services;
-using System.Net.Http.Headers;
-using System.Text;
+using GraphInterface.Models.Helpers;
 
 namespace GraphInterface
 {
@@ -19,6 +21,7 @@ namespace GraphInterface
         private readonly GraphInterfaceOptions _options;
         private readonly string _endpoint;
         private const string TOKEN_KEY = "INTERNAL::TOKEN_CACHE_KEY";
+        private const uint BATCH_REQUEST_SIZE = 20;
         public GraphInterfaceClient(GraphInterfaceCredentials credentials): this(credentials, new GraphInterfaceOptions()) {}
         public GraphInterfaceClient(GraphInterfaceCredentials credentials, GraphInterfaceOptions options)
         {
@@ -87,8 +90,12 @@ namespace GraphInterface
         }
         public async Task<T> Unit<T>(string resource, GraphInterfaceUnitOptions options) where T : class
         {
-            _options.Logger.LogDebug("Generating unit request hash key");
-            string hash = GraphInterfaceRequestHasher.Hash(resource, options);
+            if (string.IsNullOrWhiteSpace(resource))
+            {
+                throw new Exception("Resource cannot be null, empty or whitespace only");
+            }
+
+            string hash = options.UseCache ? GraphInterfaceRequestHasher.Hash(resource, options) : null;
 
             if (options.UseCache)
             {
@@ -101,7 +108,14 @@ namespace GraphInterface
                 }
             }
 
-            var request = new HttpRequestMessage(options.Method, $"{_endpoint}/{resource}");
+            var uri = new Uri(resource, UriKind.RelativeOrAbsolute);
+
+            if (!uri.IsAbsoluteUri)
+            {
+                uri = new Uri($"{_endpoint}/{resource}", UriKind.Absolute);
+            }
+
+            var request = new HttpRequestMessage(options.Method, uri);
             string token = await GetAccessToken();
 
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -140,6 +154,127 @@ namespace GraphInterface
         public async Task<T> Unit<T>(string resource) where T : class
         {
             return await Unit<T>(resource, new GraphInterfaceUnitOptions());
+        }
+        public async Task<IEnumerable<T>> List<T>(string resource, GraphInterfaceListOptions options) where T : class
+        {
+            if (string.IsNullOrWhiteSpace(resource))
+            {
+                throw new Exception("Resource cannot be null, empty or whitespace only");
+            }
+
+            if (options.Limit == 0)
+            {
+                return new List<T>();
+            }
+
+            _options.Logger.LogDebug("Generating list request hash key");
+            string hash = options.UseCache ? GraphInterfaceRequestHasher.Hash(resource, options) : null;
+
+            if (options.UseCache)
+            {
+                AssertCacheIsNotNull();
+                
+                if (_options.CacheService.Has(hash))
+                {
+                    _options.Logger.LogDebug("Returning cached list response");
+                    return _options.CacheService.Get<IEnumerable<T>>(hash);
+                }
+            }
+
+            var unitOptions = options.ToUnitOptions();
+            int index = 0;
+            int offset = options.Offset.GetValueOrDefault(0);
+
+            string nextUri = resource;
+            GraphInterfaceListResponse<T> response;
+            Func<int, bool> hasFinished = index =>
+            {
+                if (options.Limit == null) return false;
+
+                return (index - offset) == options.Limit.GetValueOrDefault();
+            };
+
+            var result = new List<T>();
+
+            do
+            {
+                response = await Unit<GraphInterfaceListResponse<T>>(nextUri, unitOptions);
+
+                if (index >= offset)
+                {
+                    result.AddRange(response.Value);
+                }
+
+                nextUri = response.NextLink;
+
+                index++;
+            } while (!string.IsNullOrEmpty(nextUri) && !hasFinished(index));
+
+            if (options.UseCache)
+            {
+                _options.Logger.LogDebug("Caching list response");
+                _options.CacheService.Set<IEnumerable<T>>(hash, result);
+            }
+
+            return result;
+        }
+        public async Task<IEnumerable<T>> List<T>(string resource) where T : class
+        {
+            return await List<T>(resource, new GraphInterfaceListOptions());
+        }
+        public async Task<Dictionary<string, T>> Massive<T>(string format, GraphInterfaceMassiveOptions options) where T : class
+        {
+            if (string.IsNullOrWhiteSpace(format))
+            {
+                throw new Exception("Format cannot be null, empty or whitespace only");
+            }
+
+            options.Assert();
+
+            var resources = new List<string>();
+            var formatParams = new List<List<string>>();
+            
+            var values = options.Values.ToList();
+            int l = values.Count();
+
+            for (int i = 0; i < l; i++)
+            {
+                var items = values[i].ToList();
+                var s = items.Count();
+
+                for (int j = 0; j < s; j++)
+                {
+                    if (formatParams.ElementAtOrDefault(j) == null)
+                    {
+                        formatParams.Add(new List<string> { items[j] });
+                    }
+                    else
+                    {
+                        formatParams[j].Add(items[j]);
+                    }
+                }
+            }
+
+            foreach (var param in formatParams)
+            {
+                resources.Add(string.Format(format, param.ToArray()));
+            }
+
+            var result = new Dictionary<string, T>();
+
+            
+
+            if (options.ParseMethod == GraphInterfaceParseMethod.Unit)
+            {
+
+            }
+            // List Method
+            // else
+            // {
+
+            // }
+
+            return result;
         }
         private void Catch(HttpResponseMessage response, string responseString)
         {

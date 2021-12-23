@@ -1,6 +1,6 @@
 using GraphInterface.Models.Abstract;
 
-namespace GraphInterface.Models.Options
+namespace GraphInterface.Options
 {
     public class GraphInterfaceUnitOptions : GraphInterfaceRequestOptions {}
 }
