@@ -21,7 +21,7 @@ namespace GraphInterface
         private readonly GraphInterfaceOptions _options;
         private readonly string _endpoint;
         private const string TOKEN_KEY = "INTERNAL::TOKEN_CACHE_KEY";
-        private const uint BATCH_REQUEST_SIZE = 20;
+        private const int BATCH_REQUEST_SIZE = 20;
         public GraphInterfaceClient(GraphInterfaceCredentials credentials): this(credentials, new GraphInterfaceOptions()) {}
         public GraphInterfaceClient(GraphInterfaceCredentials credentials, GraphInterfaceOptions options)
         {
@@ -260,9 +260,26 @@ namespace GraphInterface
                 resources.Add(string.Format(format, param.ToArray()));
             }
 
-            var result = new Dictionary<string, T>();
+            var batchRequests = new Dictionary<string, T>();
 
-            return result;
+            l = resources.Count();
+            Uri batchEndpoint = new Uri($"{_endpoint}/$batch", UriKind.Absolute);
+
+            var requests = resources.Select(resource =>
+            {
+                // TODO: Map resources to GraphInterfaceBatchRequestItems
+                return "null";
+            });
+
+            for (int i = 0; i < l; i += BATCH_REQUEST_SIZE)
+            {
+                int s = Math.Min(BATCH_REQUEST_SIZE + i, l);
+                var request = new HttpRequestMessage(HttpMethod.Post, batchEndpoint);
+
+                // TODO: Create Batch requests
+            }
+
+            throw new NotImplementedException();
         }
         private void Catch(HttpResponseMessage response, string responseString)
         {
