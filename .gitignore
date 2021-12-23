@@ -1,3 +1,5 @@
+scripts/vars.cmd
+
 *.swp
 *.*~
 project.lock.json

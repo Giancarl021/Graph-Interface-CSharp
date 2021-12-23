@@ -1,6 +1,8 @@
 @echo off
 
-call "@vars.cmd"
+set HERE=%~dp0
+
+call "%HERE%\vars.cmd"
 
 call dotnet build
 
