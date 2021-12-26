@@ -287,12 +287,21 @@ namespace GraphInterface
                 });
             }
 
-            foreach (var package in packages)
-            {
+            var cycler = new GraphInterfaceMassiveCycler<T>(
+                new GraphInterfaceMassiveCyclerOptions
+                {
+                    Packages = packages,
+                    GetAccessToken = () => GetAccessToken(),
+                    MaximumAttempts = (int)options.Attempts,
+                    Ticks = (int)options.RequestsPerAttempt,
+                    Parallel = options.Parallel,
+                    Logger = _options.Logger
+                }
+            );
 
-            }
+            var response = await cycler.Cycle();
 
-            throw new NotImplementedException();
+            return response;
         }
         private void Catch(HttpResponseMessage response, string responseString)
         {
