@@ -230,53 +230,66 @@ namespace GraphInterface
             }
 
             options.Assert();
-
-            var resources = new List<string>();
-            var formatParams = new List<List<string>>();
             
-            var values = options.Values.ToList();
-            int l = values.Count();
-
-            for (int i = 0; i < l; i++)
-            {
-                var items = values[i].ToList();
-                var s = items.Count();
-
-                for (int j = 0; j < s; j++)
-                {
-                    if (formatParams.ElementAtOrDefault(j) == null)
-                    {
-                        formatParams.Add(new List<string> { items[j] });
-                    }
-                    else
-                    {
-                        formatParams[j].Add(items[j]);
-                    }
-                }
-            }
-
-            foreach (var param in formatParams)
-            {
-                resources.Add(string.Format(format, param.ToArray()));
-            }
-
-            var batchRequests = new Dictionary<string, T>();
-
-            l = resources.Count();
             Uri batchEndpoint = new Uri($"{_endpoint}/$batch", UriKind.Absolute);
 
-            var requests = resources.Select(resource =>
+            var resourcesBuilder = new GraphInterfaceMassiveResourcesBuilder(format, options.Values);
+            var resources = resourcesBuilder.Build();
+
+            int l = resources.Count();
+            
+            var binderList = options
+                .Values
+                .ToList()
+                [(int)options.BinderIndex]
+                .ToList();
+
+            var requests = resources.Select((resource, index) => new GraphInterfaceBatchRequestItem
             {
-                // TODO: Map resources to GraphInterfaceBatchRequestItems
-                return "null";
+                Url = new Uri(resource, UriKind.Relative),
+                Method = options.Method,
+                Headers = options.Headers,
+                Body = options.Body,
+                Id = binderList[index]
             });
+
+            var packages = new List<Func<Task<GraphInterfaceBatchResponse>>>();
 
             for (int i = 0; i < l; i += BATCH_REQUEST_SIZE)
             {
                 int s = Math.Min(BATCH_REQUEST_SIZE + i, l);
                 var request = new HttpRequestMessage(HttpMethod.Post, batchEndpoint);
 
-                // TODO: Create Batch requests
+                foreach (var item in options.BatchRequestHeaders)
+                {
+                    request.Headers.Add(item.Key, item.Value);
+                }
+
+                request.Content = new StringContent(
+                    JsonConvert.SerializeObject(new GraphInterfaceBatchRequestBody(requests.Skip(i).Take(s))),
+                    Encoding.UTF8,
+                    "application/json"
+                );
+
+                packages.Add(async () =>
+                {
+                    var response = await _options.HttpClient.SendAsync(request);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        return null;
+                    }
+
+                    string responseString = await response.Content.ReadAsStringAsync();
+                    var data = JsonConvert.DeserializeObject<GraphInterfaceBatchResponse>(responseString);
+
+                    return data;
+                });
+            }
+
+            foreach (var package in packages)
+            {
+
             }
 
             throw new NotImplementedException();

@@ -1,5 +1,5 @@
 using System;
-using GraphInterface.Services;
+using GraphInterface.Services.Converters;
 using Newtonsoft.Json;
 
 namespace GraphInterface.Auth

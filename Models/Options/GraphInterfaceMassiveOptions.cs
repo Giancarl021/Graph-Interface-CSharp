@@ -7,6 +7,7 @@ namespace GraphInterface.Options
 {
     public class GraphInterfaceMassiveOptions : GraphInterfaceRequestOptions
     {
+        public new Dictionary<string, string> Headers { get; set; } = null;
         public Dictionary<string, string> BatchRequestHeaders { get; set; } = new Dictionary<string, string>();
         public IEnumerable<IEnumerable<string>> Values { get; set; } = null;
         public uint BinderIndex = 0;

@@ -1,7 +1,7 @@
 using System;
 using Newtonsoft.Json;
 
-namespace GraphInterface.Services
+namespace GraphInterface.Services.Converters
 {
     internal class TimeSpanJsonConverter : JsonConverter<TimeSpan>
     {
