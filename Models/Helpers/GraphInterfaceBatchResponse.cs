@@ -10,5 +10,7 @@ namespace GraphInterface.Models.Helpers
     {
         [JsonProperty("responses")]
         public IEnumerable<GraphInterfaceBatchResponseItem> Responses { get; set; }
+        public bool IsSuccessful { get; set; } = true;
+        public IEnumerable<string> RejectedIds { get; set; } = null;
     }
 }

@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Text;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Throttle;
 
 using GraphInterface.Auth;
 using GraphInterface.Options;
 using GraphInterface.Services;
 using GraphInterface.Models.Helpers;
+using Newtonsoft.Json.Linq;
 
 namespace GraphInterface
 {
@@ -20,6 +22,7 @@ namespace GraphInterface
         private readonly GraphInterfaceCredentials _credentials;
         private readonly GraphInterfaceOptions _options;
         private readonly string _endpoint;
+        private readonly Uri _batchEndpoint;
         private const string TOKEN_KEY = "INTERNAL::TOKEN_CACHE_KEY";
         private const int BATCH_REQUEST_SIZE = 20;
         public GraphInterfaceClient(GraphInterfaceCredentials credentials): this(credentials, new GraphInterfaceOptions()) {}
@@ -28,6 +31,7 @@ namespace GraphInterface
             _credentials = credentials;
             _options = options;
             _endpoint = $"https://graph.microsoft.com/{options.Version}";
+            _batchEndpoint = new Uri($"{_endpoint}/$batch", UriKind.Absolute);
             AssertHttpClientIsNotNull();
         }
         public async Task<string> GetAccessToken(GraphInterfaceAccessTokenOptions options)
@@ -230,8 +234,6 @@ namespace GraphInterface
             }
 
             options.Assert();
-            
-            Uri batchEndpoint = new Uri($"{_endpoint}/$batch", UriKind.Absolute);
 
             var resourcesBuilder = new GraphInterfaceMassiveResourcesBuilder(format, options.Values);
             var resources = resourcesBuilder.Build();
@@ -243,65 +245,138 @@ namespace GraphInterface
                 .ToList()
                 [(int)options.BinderIndex]
                 .ToList();
+            
+            var remaining = new Dictionary<string, GraphInterfaceBatchResponse>();
+            var results = new Dictionary<string, T>();
+            int attempts = 0;
 
-            var requests = resources.Select((resource, index) => new GraphInterfaceBatchRequestItem
+            do
             {
-                Url = new Uri(resource, UriKind.Relative),
-                Method = options.Method,
-                Headers = options.Headers,
-                Body = options.Body,
-                Id = binderList[index]
-            });
+                var requests = Bind(resources);
+                var packages = Pack(requests);
 
-            var packages = new List<Func<Task<GraphInterfaceBatchResponse>>>();
+                var responses = await Throttler.Throttle(packages, (int)options.RequestsPerAttempt);
 
-            for (int i = 0; i < l; i += BATCH_REQUEST_SIZE)
-            {
-                int s = Math.Min(BATCH_REQUEST_SIZE + i, l);
-                var request = new HttpRequestMessage(HttpMethod.Post, batchEndpoint);
+                var result = Unpack(responses);
 
-                foreach (var item in options.BatchRequestHeaders)
+                foreach (var item in result.Resolved)
                 {
-                    request.Headers.Add(item.Key, item.Value);
+                    results.Add(item.Id, JObject.FromObject(item.Body).ToObject<T>());
                 }
 
-                request.Content = new StringContent(
-                    JsonConvert.SerializeObject(new GraphInterfaceBatchRequestBody(requests.Skip(i).Take(s))),
-                    Encoding.UTF8,
-                    "application/json"
-                );
+                if (resources.Count() == result.Rejected.Count()) attempts++;
 
-                packages.Add(async () =>
+                if (attempts >= options.Attempts)
                 {
-                    var response = await _options.HttpClient.SendAsync(request);
-
-                    if (!response.IsSuccessStatusCode)
+                    if (!options.NullifyErrors) throw new Exception("Maximum attempts reached");
+                    
+                    foreach (var id in result.Rejected)
                     {
-                        return null;
+                        results.Add(id, null);
                     }
 
-                    string responseString = await response.Content.ReadAsStringAsync();
-                    var data = JsonConvert.DeserializeObject<GraphInterfaceBatchResponse>(responseString);
+                    break;
+                }
 
-                    return data;
-                });
+                resources = result.Rejected;
+            } while (resources.Count() > 0);
+
+            return results;
+
+            IEnumerable<GraphInterfaceBatchRequestItem> Bind(IEnumerable<string> resources)
+            {
+                return resources.Select((resource, index) =>
+                    new GraphInterfaceBatchRequestItem
+                    {
+                        Url = new Uri(resource, UriKind.Relative),
+                        Method = options.Method,
+                        Headers = options.Headers,
+                        Body = options.Body,
+                        Id = binderList[index]
+                    }
+                );
             }
 
-            var cycler = new GraphInterfaceMassiveCycler<T>(
-                new GraphInterfaceMassiveCyclerOptions
+            IEnumerable<Func<Task<GraphInterfaceBatchResponse>>> Pack(IEnumerable<GraphInterfaceBatchRequestItem> requestItems)
+            {
+                var requests = requestItems.Where(request => request != null);
+
+                var packages = new List<Func<Task<GraphInterfaceBatchResponse>>>();
+
+                for (int i = 0; i < l; i += BATCH_REQUEST_SIZE)
                 {
-                    Packages = packages,
-                    GetAccessToken = () => GetAccessToken(),
-                    MaximumAttempts = (int)options.Attempts,
-                    Ticks = (int)options.RequestsPerAttempt,
-                    Parallel = options.Parallel,
-                    Logger = _options.Logger
+                    int s = Math.Min(BATCH_REQUEST_SIZE + i, l);
+                    var request = new HttpRequestMessage(HttpMethod.Post, _batchEndpoint);
+
+                    foreach (var item in options.BatchRequestHeaders)
+                    {
+                        request.Headers.Add(item.Key, item.Value);
+                    }
+
+                    var requestBlock = requests.Skip(i).Take(s);
+
+                    request.Content = new StringContent(
+                        JsonConvert.SerializeObject(new GraphInterfaceBatchRequestBody(requestBlock)),
+                        Encoding.UTF8,
+                        "application/json"
+                    );
+
+                    packages.Add(async () =>
+                    {
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await GetAccessToken());
+                        var response = await _options.HttpClient.SendAsync(request);
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            return new GraphInterfaceBatchResponse
+                            {
+                                IsSuccessful = false,
+                                RejectedIds = requestBlock.Select(requestItem => requestItem.Id)
+                            };
+                        }
+
+                        string responseString = await response.Content.ReadAsStringAsync();
+                        var data = JsonConvert.DeserializeObject<GraphInterfaceBatchResponse>(responseString);
+
+                        return data;
+                    });
                 }
-            );
 
-            var response = await cycler.Cycle();
+                return packages;
+            }
 
-            return response;
+            GraphInterfaceBatchResult Unpack(IEnumerable<GraphInterfaceBatchResponse> responses)
+            {
+                var result = new GraphInterfaceBatchResult
+                {
+                    Resolved = new List<GraphInterfaceBatchResponseItem>(),
+                    Rejected = new List<string>()
+                };
+
+                foreach (var response in responses)
+                {
+                    if (!response.IsSuccessful)
+                    {
+                        result.Rejected.AddRange(response.RejectedIds);
+                        continue;
+                    }
+
+                    foreach (var item in response.Responses)
+                    {
+                        bool isSuccess = new HttpResponseMessage(item.StatusCode).IsSuccessStatusCode;
+                        if (isSuccess)
+                        {
+                            result.Resolved.Add(item);
+                        }
+                        else
+                        {
+                            result.Rejected.Add(item.Id);
+                        }
+                    }
+                }
+
+                return result;
+            }
         }
         private void Catch(HttpResponseMessage response, string responseString)
         {
