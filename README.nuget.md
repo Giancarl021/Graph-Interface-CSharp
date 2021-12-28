@@ -1,7 +1,5 @@
 # Graph-Interface-CSharp
 
-![](assets/icon.png)
-
 Simple Microsoft [Graph API](https://docs.microsoft.com/pt-br/graph/api/overview) client.
 
 ## Similar projects
