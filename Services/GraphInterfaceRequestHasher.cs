@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using GraphInterface.Models.Abstract;
+using Newtonsoft.Json;
 
 namespace GraphInterface.Services
 {
@@ -8,24 +9,11 @@ namespace GraphInterface.Services
     {
         public static string Hash(string uri, GraphInterfaceRequestOptions options)
         {
-            var properties = options.GetType().GetProperties();
-            string data = uri + "@";
+            string data = uri + "::" + JsonConvert.SerializeObject(options);
 
-            foreach (var property in properties)
-            {
-                data += $"{property.Name}::{property.GetValue(options)?.ToString()}|";
-            }
-
-            data = data.Remove(data.Length - 1);
-
-            return HashWithSHA1(data);
-        }
-
-        private static string HashWithSHA1(string input)
-        {
             using (HashAlgorithm hash = SHA1.Create())
             {
-                byte[] bytes = hash.ComputeHash(Encoding.UTF8.GetBytes(input));
+                byte[] bytes = hash.ComputeHash(Encoding.UTF8.GetBytes(data));
 
                 StringBuilder builder = new StringBuilder();
 

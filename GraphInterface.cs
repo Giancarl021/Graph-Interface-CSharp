@@ -226,6 +226,22 @@ namespace GraphInterface
 
             options.Assert();
 
+            _options.Logger.LogDebug("Generating massive request hash key");
+            string hash = options.UseCache ? GraphInterfaceRequestHasher.Hash(format, options) : null;
+
+            if (options.UseCache)
+            {
+                AssertCacheIsNotNull();
+
+                if (_options.CacheService.Has(hash))
+                {
+                    _options.Logger.LogDebug("Returning cached massive response");
+                    return _options.CacheService.Get<Dictionary<string, T>>(hash);
+                }
+            }
+
+
+            _options.Logger.LogDebug("Generating individual urls");
             var resourcesBuilder = new GraphInterfaceMassiveResourcesBuilder(format, options.Values);
             var resources = resourcesBuilder.Build();
 
@@ -241,6 +257,8 @@ namespace GraphInterface
             var results = new Dictionary<string, T>();
             int attempts = 0;
 
+            _options.Logger.LogDebug("Generating individual requests");
+
             var requests = Bind(resources);
 
             requests
@@ -252,10 +270,13 @@ namespace GraphInterface
 
             do
             {
+                _options.Logger.LogDebug("Packaging requests into Graph batch requests");
                 var packages = Pack(requests);
 
+                _options.Logger.LogDebug("Sending batch requests");
                 var responses = await Throttler.Throttle(packages, (int)options.RequestsPerAttempt);
 
+                _options.Logger.LogDebug("Resolving batch responses");
                 var result = Unpack(responses);
 
                 foreach (var item in result.Resolved)
@@ -263,12 +284,17 @@ namespace GraphInterface
                     results.Add(item.Id, JObject.FromObject(item.Body).ToObject<T>());
                 }
 
-                if (resources.Count() == result.Rejected.Count()) attempts++;
+                if (resources.Count() == result.Rejected.Count())
+                {
+                    _options.Logger.LogDebug("All requests were rejected");
+                    attempts++;
+                }
 
                 if (attempts >= options.Attempts)
                 {
                     if (!options.NullifyErrors) throw new Exception("Maximum attempts reached");
                     
+                    _options.Logger.LogDebug("Maximum attempts reached, nullifying errors");
                     foreach (var id in result.Rejected)
                     {
                         results.Add(id, null);
@@ -280,6 +306,12 @@ namespace GraphInterface
                 resources = result.Rejected;
                 requests = Rebind(resources);
             } while (resources.Count() > 0);
+
+            if (options.UseCache)
+            {
+                _options.Logger.LogDebug("Caching massive response");
+                _options.CacheService.Set(hash, results);
+            }
 
             return results;
 
