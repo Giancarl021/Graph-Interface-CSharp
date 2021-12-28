@@ -276,8 +276,6 @@ namespace GraphInterface
                 {
                     urls.Add(request.Id, request.Url);
                 });
-            
-            var prev = requests;
 
             do
             {
