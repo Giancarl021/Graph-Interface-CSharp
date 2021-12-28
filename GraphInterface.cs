@@ -88,10 +88,7 @@ namespace GraphInterface
             _options.Logger.LogDebug("Returning access token");
             return token.AccessToken;
         }
-        public async Task<string> GetAccessToken()
-        {
-            return await GetAccessToken(new GraphInterfaceAccessTokenOptions());
-        }
+        public async Task<string> GetAccessToken() => await GetAccessToken(new GraphInterfaceAccessTokenOptions());
         public async Task<T> Unit<T>(string resource, GraphInterfaceUnitOptions options) where T : class
         {
             if (string.IsNullOrWhiteSpace(resource))
@@ -155,10 +152,7 @@ namespace GraphInterface
             _options.Logger.LogDebug("Returning unit response");
             return result;
         }
-        public async Task<T> Unit<T>(string resource) where T : class
-        {
-            return await Unit<T>(resource, new GraphInterfaceUnitOptions());
-        }
+        public async Task<T> Unit<T>(string resource) where T : class => await Unit<T>(resource, new GraphInterfaceUnitOptions());
         public async Task<IEnumerable<T>> List<T>(string resource, GraphInterfaceListOptions options) where T : class
         {
             if (string.IsNullOrWhiteSpace(resource))
@@ -222,10 +216,7 @@ namespace GraphInterface
 
             return result;
         }
-        public async Task<IEnumerable<T>> List<T>(string resource) where T : class
-        {
-            return await List<T>(resource, new GraphInterfaceListOptions());
-        }
+        public async Task<IEnumerable<T>> List<T>(string resource) where T : class => await List<T>(resource, new GraphInterfaceListOptions());
         public async Task<Dictionary<string, T>> Massive<T>(string format, GraphInterfaceMassiveOptions options) where T : class
         {
             if (string.IsNullOrWhiteSpace(format))
