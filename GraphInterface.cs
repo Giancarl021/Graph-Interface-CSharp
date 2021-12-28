@@ -40,10 +40,10 @@ namespace GraphInterface
             {
                 AssertCacheIsNotNull();
                 
-                if (_options.CacheService.Has(TOKEN_KEY))
+                if (await _options.CacheService.Has(TOKEN_KEY))
                 {
                     _options.Logger.LogDebug("Returning cached access token");
-                    return _options.CacheService.Get<GraphInterfaceAccessTokenResponse>(TOKEN_KEY).AccessToken;
+                    return (await _options.CacheService.Get<GraphInterfaceAccessTokenResponse>(TOKEN_KEY)).AccessToken;
                 }
             }
 
@@ -55,7 +55,7 @@ namespace GraphInterface
                 if (options.UseCache)
                 {
                     _options.Logger.LogDebug("Caching access token");
-                    _options.CacheService.Set(TOKEN_KEY, customToken, customToken.ExpiresIn);
+                    await _options.CacheService.Set(TOKEN_KEY, customToken, customToken.ExpiresIn);
                 }
                 _options.Logger.LogDebug("Returning access token from custom authentication provider");
                 return customToken.AccessToken;
@@ -82,7 +82,7 @@ namespace GraphInterface
             if (options.UseCache)
             {
                 _options.Logger.LogDebug("Caching access token");
-                _options.CacheService.Set(TOKEN_KEY, token, token.ExpiresIn);
+                await _options.CacheService.Set(TOKEN_KEY, token, token.ExpiresIn);
             }
 
             _options.Logger.LogDebug("Returning access token");
@@ -102,10 +102,10 @@ namespace GraphInterface
             {
                 AssertCacheIsNotNull();
                 
-                if (_options.CacheService.Has(hash))
+                if (await _options.CacheService.Has(hash))
                 {
                     _options.Logger.LogDebug("Returning cached unit response");
-                    return _options.CacheService.Get<T>(hash);
+                    return await _options.CacheService.Get<T>(hash);
                 }
             }
 
@@ -146,7 +146,7 @@ namespace GraphInterface
             if (options.UseCache)
             {
                 _options.Logger.LogDebug("Caching unit response");
-                _options.CacheService.Set(hash, result);
+                await _options.CacheService.Set(hash, result);
             }
 
             _options.Logger.LogDebug("Returning unit response");
@@ -172,10 +172,10 @@ namespace GraphInterface
             {
                 AssertCacheIsNotNull();
                 
-                if (_options.CacheService.Has(hash))
+                if (await _options.CacheService.Has(hash))
                 {
                     _options.Logger.LogDebug("Returning cached list response");
-                    return _options.CacheService.Get<IEnumerable<T>>(hash);
+                    return await _options.CacheService.Get<IEnumerable<T>>(hash);
                 }
             }
 
@@ -211,7 +211,7 @@ namespace GraphInterface
             if (options.UseCache)
             {
                 _options.Logger.LogDebug("Caching list response");
-                _options.CacheService.Set<IEnumerable<T>>(hash, result);
+                await _options.CacheService.Set<IEnumerable<T>>(hash, result);
             }
 
             return result;
@@ -233,10 +233,10 @@ namespace GraphInterface
             {
                 AssertCacheIsNotNull();
 
-                if (_options.CacheService.Has(hash))
+                if (await _options.CacheService.Has(hash))
                 {
                     _options.Logger.LogDebug("Returning cached massive response");
-                    return _options.CacheService.Get<Dictionary<string, T>>(hash);
+                    return await _options.CacheService.Get<Dictionary<string, T>>(hash);
                 }
             }
 
@@ -310,7 +310,7 @@ namespace GraphInterface
             if (options.UseCache)
             {
                 _options.Logger.LogDebug("Caching massive response");
-                _options.CacheService.Set(hash, results);
+                await _options.CacheService.Set(hash, results);
             }
 
             return results;

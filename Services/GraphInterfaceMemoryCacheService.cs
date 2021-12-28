@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using GraphInterface.Interfaces;
 using GraphInterface.Models.Helpers;
 
@@ -16,14 +17,15 @@ namespace GraphInterface.Services
             _values = new Dictionary<string, GraphInterfaceMemoryCacheItem>();
         }
         public GraphInterfaceMemoryCacheService() : this(TimeSpan.FromHours(1)) {}
-        public void Expire(string key)
+        public async Task Expire(string key)
         {
             _values.Remove(key);
+            await Task.CompletedTask;
         }
 
-        public T Get<T>(string key) where T : class
+        public async Task<T> Get<T>(string key) where T : class
         {
-            if (!Has(key))
+            if (!await Has(key))
             {
                 throw new Exception("Cache data missing");
             }
@@ -41,30 +43,32 @@ namespace GraphInterface.Services
             return item.Value as T;
         }
 
-        public bool Has(string key)
+        public async Task<bool> Has(string key)
         {
             if (!_values.ContainsKey(key)) return false;
 
             if (DateTime.Now >= _values[key].Expiration)
             {
-                Expire(key);
+                await Expire(key);
                 return false;
             }
 
             return true;
         }
 
-        public void Set<T>(string key, T value) where T : class
+        public async Task Set<T>(string key, T value) where T : class
         {
-            Set(key, value, _defaultExpirationTime);
+            await Set(key, value, _defaultExpirationTime);
         }
-        public void Set<T>(string key, T value, TimeSpan expiration) where T : class
+        public async Task Set<T>(string key, T value, TimeSpan expiration) where T : class
         {
             _values.Add(key, new GraphInterfaceMemoryCacheItem
             {
                 Value = value,
                 Expiration = DateTime.Now.Add(expiration)
             });
+
+            await Task.CompletedTask;
         }
     }
 }
