@@ -230,20 +230,28 @@ namespace GraphInterface
             var resources = resourcesBuilder.Build();
 
             int l = resources.Count();
+            var urls = new Dictionary<string, Uri>();
             
             var binderList = options
                 .Values
                 .ToList()
                 [(int)options.BinderIndex]
                 .ToList();
-            
-            var remaining = new Dictionary<string, GraphInterfaceBatchResponse>();
+
             var results = new Dictionary<string, T>();
             int attempts = 0;
 
+            var requests = Bind(resources);
+
+            requests
+                .ToList()
+                .ForEach(request =>
+                {
+                    urls[request.Id] = request.Url;
+                });
+
             do
             {
-                var requests = Bind(resources);
                 var packages = Pack(requests);
 
                 var responses = await Throttler.Throttle(packages, (int)options.RequestsPerAttempt);
@@ -270,24 +278,31 @@ namespace GraphInterface
                 }
 
                 resources = result.Rejected;
+                requests = Rebind(resources);
             } while (resources.Count() > 0);
 
             return results;
 
-            IEnumerable<GraphInterfaceBatchRequestItem> Bind(IEnumerable<string> resources)
-            {
-                return resources.Select((resource, index) =>
-                    new GraphInterfaceBatchRequestItem
-                    {
-                        Url = new Uri(resource, UriKind.Relative),
-                        Method = options.Method,
-                        Headers = options.Headers,
-                        Body = options.Body,
-                        Id = binderList[index]
-                    }
-                );
-            }
-
+            IEnumerable<GraphInterfaceBatchRequestItem> Bind(IEnumerable<string> resources) => resources.Select((resource, index) =>
+                new GraphInterfaceBatchRequestItem
+                {
+                    Url = new Uri(resource, UriKind.Relative),
+                    Method = options.Method,
+                    Headers = options.Headers,
+                    Body = options.Body,
+                    Id = binderList[index]
+                });
+            
+            IEnumerable<GraphInterfaceBatchRequestItem> Rebind(IEnumerable<string> ids) => ids.Select(id =>
+                new GraphInterfaceBatchRequestItem
+                {
+                    Url = urls[id],
+                    Method = options.Method,
+                    Headers = options.Headers,
+                    Body = options.Body,
+                    Id = id
+                });
+            
             IEnumerable<Func<Task<GraphInterfaceBatchResponse>>> Pack(IEnumerable<GraphInterfaceBatchRequestItem> requestItems)
             {
                 var requests = requestItems.Where(request => request != null);
