@@ -76,7 +76,7 @@ public class GraphInterfaceOptions
 
 * **Version** - The version of the Graph API to use. Default `v1.0`.
 * **AuthenticationProvider** - A function that will be called to get the access token. If not provided, the client will use the default `GetAccessToken` behavior.
-* **Logger** - An `ILogger` instance to log the requests and responses. Default `NullLogger.Instance`.
+* **Logger** - An `ILogger` instance to log the internal processing of requests in the library. All logs have a level of `LogLevel.Debug`. Default `NullLogger.Instance`.
 * **HttpClient** - An `HttpClient` instance to use to make the requests. Default `new HttpClient()`.
 * **CacheService** - An `IGraphInterfaceCacheService` instance to use to cache access tokens and responses if needed. Default `new GraphInterfaceMemoryCacheService()`.
 
