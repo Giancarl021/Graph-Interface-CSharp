@@ -29,3 +29,4 @@ public class GraphInterfaceAccessTokenOptions
 ## Returns
 
 A string with the access token as value. In order to use it, you need to add it to the `Authorization` header of your request, prefixed with `Bearer `.
+If the `AuthenticationProvider` is set in the `GraphInterfaceOptions` in the instance, the set method will call it to get the access token.
