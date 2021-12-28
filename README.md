@@ -18,3 +18,9 @@ However, some things are not available in the official package, like the ability
 # Installation
 
 You can get this package on the [Nuget]().
+
+# Methods
+
+* [Unit]() - Makes requests that returns only a single entity;
+* [List]() - Makes requests that returns a list of entities, paginated using the `@odata.nextLink` property;
+* [Massive]() - Makes 

@@ -259,14 +259,25 @@ namespace GraphInterface
 
             _options.Logger.LogDebug("Generating individual requests");
 
-            var requests = Bind(resources);
+            var requests = resources.Select((resource, index) =>
+                new GraphInterfaceBatchRequestItem
+                {
+                    Url = new Uri(resource, UriKind.Relative),
+                    Method = options.Method,
+                    Headers = options.Headers,
+                    Body = options.Body,
+                    Id = binderList[index]
+                }
+            );
 
             requests
                 .ToList()
                 .ForEach(request =>
                 {
-                    urls[request.Id] = request.Url;
+                    urls.Add(request.Id, request.Url);
                 });
+            
+            var prev = requests;
 
             do
             {
@@ -304,6 +315,9 @@ namespace GraphInterface
                 }
 
                 resources = result.Rejected;
+                l = resources.Count();
+                
+                _options.Logger.LogDebug("Generating individual requests");
                 requests = Rebind(resources);
             } while (resources.Count() > 0);
 
@@ -314,16 +328,6 @@ namespace GraphInterface
             }
 
             return results;
-
-            IEnumerable<GraphInterfaceBatchRequestItem> Bind(IEnumerable<string> resources) => resources.Select((resource, index) =>
-                new GraphInterfaceBatchRequestItem
-                {
-                    Url = new Uri(resource, UriKind.Relative),
-                    Method = options.Method,
-                    Headers = options.Headers,
-                    Body = options.Body,
-                    Id = binderList[index]
-                });
             
             IEnumerable<GraphInterfaceBatchRequestItem> Rebind(IEnumerable<string> ids) => ids.Select(id =>
                 new GraphInterfaceBatchRequestItem
@@ -343,7 +347,6 @@ namespace GraphInterface
 
                 for (int i = 0; i < l; i += BATCH_REQUEST_SIZE)
                 {
-                    int s = Math.Min(BATCH_REQUEST_SIZE + i, l);
                     var request = new HttpRequestMessage(HttpMethod.Post, _batchEndpoint);
 
                     foreach (var item in options.BatchRequestHeaders)
@@ -351,7 +354,8 @@ namespace GraphInterface
                         request.Headers.Add(item.Key, item.Value);
                     }
 
-                    var requestBlock = requests.Skip(i).Take(s);
+                    var skipped = requests.Skip(i);
+                    var requestBlock = skipped.Take(Math.Min(BATCH_REQUEST_SIZE, skipped.Count()));
 
                     request.Content = new StringContent(
                         JsonConvert.SerializeObject(new GraphInterfaceBatchRequestBody(requestBlock)),
@@ -385,11 +389,7 @@ namespace GraphInterface
 
             GraphInterfaceBatchResult Unpack(IEnumerable<GraphInterfaceBatchResponse> responses)
             {
-                var result = new GraphInterfaceBatchResult
-                {
-                    Resolved = new List<GraphInterfaceBatchResponseItem>(),
-                    Rejected = new List<string>()
-                };
+                var result = new GraphInterfaceBatchResult();
 
                 foreach (var response in responses)
                 {
