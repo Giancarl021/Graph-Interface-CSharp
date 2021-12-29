@@ -32,6 +32,12 @@ namespace GraphInterface
             _options = options;
             _endpoint = $"https://graph.microsoft.com/{options.Version}";
             _batchEndpoint = new Uri($"{_endpoint}/$batch", UriKind.Absolute);
+
+            if (_options.CacheService == null)
+            {
+                _options.CacheAccessTokenByDefault = false;
+            }
+
             AssertHttpClientIsNotNull();
         }
         public async Task<string> GetAccessToken(GraphInterfaceAccessTokenOptions options)
