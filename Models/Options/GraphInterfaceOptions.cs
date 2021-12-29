@@ -16,5 +16,6 @@ namespace GraphInterface.Options
         public ILogger Logger { get; set; } = NullLogger.Instance;
         public HttpClient HttpClient { get; set; } = new HttpClient();
         public IGraphInterfaceCacheService CacheService { get; set; } = new GraphInterfaceMemoryCacheService();
+        public bool CacheAccessTokenByDefault { get; set; } = true;
     }
 }

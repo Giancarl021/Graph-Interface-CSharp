@@ -88,7 +88,10 @@ namespace GraphInterface
             _options.Logger.LogDebug("Returning access token");
             return token.AccessToken;
         }
-        public async Task<string> GetAccessToken() => await GetAccessToken(new GraphInterfaceAccessTokenOptions());
+        public async Task<string> GetAccessToken() => await GetAccessToken(new GraphInterfaceAccessTokenOptions
+        {
+            UseCache = _options.CacheAccessTokenByDefault
+        });
         public async Task<T> Unit<T>(string resource, GraphInterfaceUnitOptions options) where T : class
         {
             if (string.IsNullOrWhiteSpace(resource))
