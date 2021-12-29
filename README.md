@@ -80,7 +80,7 @@ public class GraphInterfaceOptions
 * **Logger** - An `ILogger` instance to log the internal processing of requests in the library. All logs have a level of `LogLevel.Debug`. Default `NullLogger.Instance`.
 * **HttpClient** - An `HttpClient` instance to use to make the requests. Default `new HttpClient()`.
 * **CacheService** - An `IGraphInterfaceCacheService` instance to use to cache access tokens and responses if needed. Default `new GraphInterfaceMemoryCacheService()`.
-* **CacheAccessTokenByDefault** - If `true`, the client will cache the access token by default. If CacheService set to `null`, this option will be ignored. Default `true`.
+* **CacheAccessTokenByDefault** - If `true`, the client will cache the access token by default. If CacheService is set to `null`, this option will be ignored. Default `true`.
 
 ## Methods
 
