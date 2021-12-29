@@ -11,7 +11,7 @@ Simple Microsoft [Graph API](https://docs.microsoft.com/pt-br/graph/api/overview
 
 As you may noticed, there is already an [official package](https://www.nuget.org/packages/Microsoft.Graph/) to deal with the Graph API requests, and it's very well done. It have all the abstractions and provides a nice API to work with.
 
-However, some things are not available in the official package, like the ability to make [massive requests](docs/Massive.md) and a simplified way to authenticate with the API.
+However, some things are not available in the official package, like the ability to make [massive requests](https://github.com/Giancarl021/Graph-Interface-CSharp/blob/master/docs/Massive.md) and a simplified way to authenticate with the API.
 
 In general, I would say that you probably should use the official package, but if you really need to make massive requests, you can use this package.
 
