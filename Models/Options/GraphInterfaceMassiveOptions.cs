@@ -12,7 +12,6 @@ namespace GraphInterface.Options
         public IEnumerable<IEnumerable<string>> Values { get; set; } = null;
         public uint BinderIndex = 0;
         public uint Attempts { get; set; } = 3;
-        public bool Parallel { get; set; } = true;
         public uint RequestsPerAttempt { get; set; } = 50;
         public bool NullifyErrors = false;
         public GraphInterfaceMassiveOptions() : base() {}
