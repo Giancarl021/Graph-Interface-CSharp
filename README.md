@@ -19,7 +19,7 @@ In general, I would say that you probably should use the official package, but i
 
 ## Installation
 
-You can get this package on the [Nuget]().
+You can get this package on the [Nuget](https://www.nuget.org/packages/GraphInterface/).
 
 ## Usage
 
