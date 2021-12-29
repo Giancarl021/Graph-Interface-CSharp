@@ -29,7 +29,7 @@ public class GraphInterfaceListOptions : GraphInterfaceRequestOptions
     public int? Limit { get; set; } = null;
     public int? Offset { get; set; } = null;
 
-    // (Internal methods removed) ...
+    // (Internal methods hidden) ...
 }
 ```
 
@@ -53,7 +53,7 @@ When you set both `Limit` and `Offset`, the number of requests will now be `Limi
 This is important because now the `Limit` does **NOT** represents the total of requests.
 ## Returns
 
-A Task, that when resolved will return an `IEnumerable` of `T` with the response from the Graph API. Note that under the hood, the response is parsed using the [Newtonsoft.Json](https://www.nuget.org/packages/Newtonsoft.Json/) `JsonConvert.DeserializeObject<T>` method, so, to get a better formed class, you can use the `[JsonProperty("propertyName")]` attribute on the properties you want to use.
+A Task, that when resolved will return a `IEnumerable` of `T` with the response from the Graph API. Note that under the hood, the response is parsed using the [Newtonsoft.Json](https://www.nuget.org/packages/Newtonsoft.Json/) `JsonConvert.DeserializeObject<T>` method, so, to get a better formed class, you can use the `[JsonProperty("propertyName")]` attribute on the properties you want to use.
 
 In this case, the original response bodies will be shaped like this:
 
