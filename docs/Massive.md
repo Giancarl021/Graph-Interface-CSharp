@@ -105,6 +105,6 @@ It is important to notice the difference, because each one of them are used to d
 
 ## Returns
 
-A Task, that when resolved will return a `Dictionary` with `string` keys and `T` values with the aggregation of all responses from Graph API. The shape of the responses will be exactly the same as the shape of the body got from the result of the batch requests. Note that under the hood, the response is parsed using the [Newtonsoft.Json](https://www.nuget.org/packages/Newtonsoft.Json/) `JsonConvert.DeserializeObject<T>` method, so, to get a better formed class, you can use the `[JsonProperty("propertyName")]` attribute on the properties you want to use.
+A Task, that when resolved will return a `Dictionary` with `string` keys, which are the based on the `Values` on the index `BinderIndex`, and `T` values with the aggregation of all responses from Graph API. The shape of the responses will be exactly the same as the shape of the body got from the result of the batch requests. Note that under the hood, the response is parsed using the [Newtonsoft.Json](https://www.nuget.org/packages/Newtonsoft.Json/) `JsonConvert.DeserializeObject<T>` method, so, to get a better formed class, you can use the `[JsonProperty("propertyName")]` attribute on the properties you want to use.
 
 It is important to note that, as the results will not be further parsed, paginated requests inside the batch will not be completed.
