@@ -62,11 +62,11 @@ namespace GraphInterface.Services
         }
         public async Task Set<T>(string key, T value, TimeSpan expiration) where T : class
         {
-            _values.Add(key, new GraphInterfaceMemoryCacheItem
+            _values[key] = new GraphInterfaceMemoryCacheItem
             {
                 Value = value,
                 Expiration = DateTime.Now.Add(expiration)
-            });
+            };
 
             await Task.CompletedTask;
         }
