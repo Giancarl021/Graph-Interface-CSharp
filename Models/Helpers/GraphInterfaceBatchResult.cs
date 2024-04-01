@@ -1,10 +1,8 @@
 using System.Collections.Generic;
 
-namespace GraphInterface.Models.Helpers
+namespace GraphInterface.Models.Helpers;
+internal class GraphInterfaceBatchResult
 {
-    internal class GraphInterfaceBatchResult
-    {
-        public List<GraphInterfaceBatchResponseItem> Resolved { get; set; } = new List<GraphInterfaceBatchResponseItem>();
-        public List<string> Rejected { get; set; } = new List<string>();
-    }
+    public List<GraphInterfaceBatchResponseItem> Resolved { get; set; } = [];
+    public List<string> Rejected { get; set; } = [];
 }

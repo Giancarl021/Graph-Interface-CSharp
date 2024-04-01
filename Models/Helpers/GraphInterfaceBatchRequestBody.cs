@@ -1,18 +1,17 @@
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using GraphInterface.Services.Converters;
 using Newtonsoft.Json;
 
-namespace GraphInterface.Models.Helpers
+namespace GraphInterface.Models.Helpers;
+internal class GraphInterfaceBatchRequestBody
 {
-    internal class GraphInterfaceBatchRequestBody
+    [JsonProperty("requests")]
+    public IEnumerable<GraphInterfaceBatchRequestItem> Requests;
+    public GraphInterfaceBatchRequestBody(IEnumerable<GraphInterfaceBatchRequestItem> requests)
     {
-        [JsonProperty("requests")]
-        public IEnumerable<GraphInterfaceBatchRequestItem> Requests;
-        public GraphInterfaceBatchRequestBody(IEnumerable<GraphInterfaceBatchRequestItem> requests)
-        {
-            Requests = requests;
-        }
+        Requests = requests;
+
+        if (Requests == null)
+            throw new ArgumentException("Requests is required");
     }
 }

@@ -12,10 +12,11 @@ namespace GraphInterface.Options
         {
             return new GraphInterfaceUnitOptions
             {
-                Body = this.Body,
-                Headers = this.Headers,
-                Method = this.Method,
-                UseCache = false
+                Body = Body,
+                Headers = Headers,
+                Method = Method,
+                UseCache = false,
+                CustomAccessToken = CustomAccessToken
             };
         }
     }

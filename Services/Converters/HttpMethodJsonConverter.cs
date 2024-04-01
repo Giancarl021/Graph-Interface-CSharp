@@ -6,18 +6,19 @@ namespace GraphInterface.Services.Converters
 {
     internal class HttpMethodJsonConverter : JsonConverter<HttpMethod>
     {
-        public override HttpMethod ReadJson(JsonReader reader, Type objectType, HttpMethod existingValue, bool hasExistingValue, JsonSerializer serializer)
+        public override HttpMethod? ReadJson(JsonReader reader, Type objectType, HttpMethod? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
             if (!hasExistingValue)
-            {
                 return null;
-            }
 
-            return new HttpMethod(reader.Value.ToString());
+            return reader.Value != null ? new HttpMethod(reader.Value!.ToString()!) : null;
         }
-        public override void WriteJson(JsonWriter writer, HttpMethod value, JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, HttpMethod? value, JsonSerializer serializer)
         {
-            writer.WriteValue(value.ToString());
+            if (value == null)
+                writer.WriteNull();
+            else
+                writer.WriteValue(value.ToString());
         }
     }
 }
