@@ -99,28 +99,12 @@ public class GraphInterfaceClient
     {
         UseCache = _options.CacheAccessTokenByDefault
     });
-    public async Task<string> UnitRaw(string resource, GraphInterfaceOptions options)
-    {
-        return await Task.FromResult("");
-    }
-    public async Task<T> Unit<T>(string resource, GraphInterfaceUnitOptions options) where T : class
+    public async Task<string> Raw(string resource) => await Raw(resource, new GraphInterfaceRawOptions());
+    public async Task<string> Raw(string resource, GraphInterfaceRawOptions options)
     {
         if (string.IsNullOrWhiteSpace(resource))
         {
             throw new Exception("Resource cannot be null, empty or whitespace only");
-        }
-
-        string? hash = options.UseCache ? GraphInterfaceRequestHasher.Hash(resource, options) : null;
-
-        if (options.UseCache)
-        {
-            AssertCacheIsNotNull();
-
-            if (await _options.CacheService.Has(hash))
-            {
-                _options.Logger.LogDebug("Returning cached unit response");
-                return (await _options.CacheService.Get<T>(hash))!;
-            }
         }
 
         var uri = new Uri(resource, UriKind.RelativeOrAbsolute);
@@ -145,21 +129,43 @@ public class GraphInterfaceClient
                 "application/json"
             );
 
-        _options.Logger.LogDebug("Sending unit request");
+        _options.Logger.LogDebug("Sending raw request");
         var response = await _options.HttpClient.SendAsync(request);
         string responseString = await response.Content.ReadAsStringAsync();
 
         Catch(response, responseString);
+
+        _options.Logger.LogDebug("Returning raw response");
+
+        return responseString;
+    }
+    public async Task<T> Unit<T>(string resource, GraphInterfaceUnitOptions options) where T : class
+    {
+        string? hash = options.UseCache ? GraphInterfaceRequestHasher.Hash(resource, options) : null;
+
+        if (options.UseCache)
+        {
+            AssertCacheIsNotNull();
+
+            if (await _options.CacheService.Has(hash!))
+            {
+                _options.Logger.LogDebug("Returning cached unit response");
+                return (await _options.CacheService.Get<T>(hash))!;
+            }
+        }
+
+        string responseString = await Raw(resource, options.ToRawOptions());
+
+        _options.Logger.LogDebug("Deserializing unit response");
 
         T result = JsonConvert.DeserializeObject<T>(responseString)!;
 
         if (options.UseCache)
         {
             _options.Logger.LogDebug("Caching unit response");
-            await _options.CacheService.Set(hash, result);
+            await _options.CacheService.Set(hash!, result);
         }
 
-        _options.Logger.LogDebug("Returning unit response");
         return result;
     }
     public async Task<T> Unit<T>(string resource) where T : class => await Unit<T>(resource, new GraphInterfaceUnitOptions());
@@ -178,7 +184,7 @@ public class GraphInterfaceClient
         {
             AssertCacheIsNotNull();
 
-            if (await _options.CacheService.Has(hash))
+            if (await _options.CacheService.Has(hash!))
             {
                 _options.Logger.LogDebug("Returning cached list response");
                 return (await _options.CacheService.Get<IEnumerable<T>>(hash))!;
@@ -427,7 +433,7 @@ public class GraphInterfaceClient
 
         if (options.Limit == 0)
             yield break;
-    
+
         var unitOptions = options.ToUnitOptions();
         int index = 0;
         int limit = options.Limit.GetValueOrDefault(0);

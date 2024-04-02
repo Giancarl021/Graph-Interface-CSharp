@@ -15,8 +15,7 @@ public class GraphInterfaceMemoryCacheService(TimeSpan defaultExpirationTime) : 
     public async Task Expire(string? key)
 
     {
-        if (key == null)
-            throw new ArgumentNullException(nameof(key));
+        ArgumentNullException.ThrowIfNull(key);
 
         _values.Remove(key);
         await Task.CompletedTask;
@@ -58,8 +57,7 @@ public class GraphInterfaceMemoryCacheService(TimeSpan defaultExpirationTime) : 
     }
     public async Task Set<T>(string? key, T value, TimeSpan expiration) where T : class
     {
-        if (key == null)
-            throw new ArgumentNullException(nameof(key));
+        ArgumentNullException.ThrowIfNull(key);
 
         _values[key] = new GraphInterfaceMemoryCacheItem
         {
