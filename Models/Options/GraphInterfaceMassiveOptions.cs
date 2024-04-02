@@ -7,6 +7,7 @@ namespace GraphInterface.Options
 {
     public class GraphInterfaceMassiveOptions(IEnumerable<IEnumerable<string>> values) : GraphInterfaceRequestOptions
     {
+        public bool UseCache { get; set; } = false;
         public new Dictionary<string, string>? Headers { get; set; } = null;
         public Dictionary<string, string> BatchRequestHeaders { get; set; } = [];
         public IEnumerable<IEnumerable<string>> Values { get; set; } = values;
@@ -24,7 +25,7 @@ namespace GraphInterface.Options
             foreach (var item in Values)
             {
                 int count = item.ToList().Count;
-                if (size == null) size = count;
+                size ??= count;
 
                 if (size != count) throw new Exception("All collections assigned to Values must have the same size");
             }

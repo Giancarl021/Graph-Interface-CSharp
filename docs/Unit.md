@@ -24,8 +24,13 @@ Dictates the behavior of the unit request. Such as Headers, Body, Method and if 
 This class extends the [`GraphInterfaceRequestOptions`](RequestOptions.md) class.
 
 ```csharp
-public class GraphInterfaceUnitOptions : GraphInterfaceRequestOptions {}
+public class GraphInterfaceUnitOptions : GraphInterfaceRequestOptions
+{
+    public bool UseCache { get; set; } = false;
+}
 ```
+
+* **UseCache** - If `true`, the response will be cached using the `IGraphInterfaceCacheService` service initialized with the client. Default `false`;
 
 ## Returns
 

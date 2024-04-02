@@ -67,15 +67,16 @@ public class GraphInterfaceClient
             return customToken.AccessToken;
         }
 
-        var request = new HttpRequestMessage(HttpMethod.Post, $"https://login.microsoftonline.com/{_credentials.TenantId}/oauth2/v2.0/token");
-
-        request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+        var request = new HttpRequestMessage(HttpMethod.Post, $"https://login.microsoftonline.com/{_credentials.TenantId}/oauth2/v2.0/token")
+        {
+            Content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 { "client_id", _credentials.ClientId },
                 { "client_secret", _credentials.ClientSecret },
                 { "grant_type", "client_credentials" },
                 { "scope", "https://graph.microsoft.com/.default" }
-            });
+            })
+        };
 
         _options.Logger.LogDebug("Requesting new access token");
         var response = await _options.HttpClient.SendAsync(request);
@@ -98,6 +99,10 @@ public class GraphInterfaceClient
     {
         UseCache = _options.CacheAccessTokenByDefault
     });
+    public async Task<string> UnitRaw(string resource, GraphInterfaceOptions options)
+    {
+        return await Task.FromResult("");
+    }
     public async Task<T> Unit<T>(string resource, GraphInterfaceUnitOptions options) where T : class
     {
         if (string.IsNullOrWhiteSpace(resource))
@@ -182,6 +187,7 @@ public class GraphInterfaceClient
 
         var unitOptions = options.ToUnitOptions();
         int index = 0;
+        int limit = options.Limit.GetValueOrDefault(0);
         int offset = options.Offset.GetValueOrDefault(0);
 
         string? nextUri = resource;
@@ -215,7 +221,7 @@ public class GraphInterfaceClient
         {
             if (options.Limit == null) return false;
 
-            return (index - offset) == options.Limit.GetValueOrDefault();
+            return (index - offset) == limit;
         }
     }
     public async Task<IEnumerable<T>> List<T>(string resource) where T : class => await List<T>(resource, new GraphInterfaceListOptions());
@@ -413,19 +419,39 @@ public class GraphInterfaceClient
             return result;
         }
     }
-    public Func<string, Task<(string?, IEnumerable<T>)>> CreateListPaginator<T>(string resource, GraphInterfaceListOptions options) where T : class
+    public IAsyncEnumerable<IEnumerable<T>> CreateListGenerator<T>(string resource) where T : class => CreateListGenerator<T>(resource, new GraphInterfaceListGeneratorOptions());
+    public async IAsyncEnumerable<IEnumerable<T>> CreateListGenerator<T>(string resource, GraphInterfaceListGeneratorOptions options) where T : class
     {
         if (string.IsNullOrWhiteSpace(resource))
             throw new Exception("Resource cannot be null, empty or whitespace only");
 
         if (options.Limit == 0)
-            return ConsolidatedResult();
+            yield break;
+    
+        var unitOptions = options.ToUnitOptions();
+        int index = 0;
+        int limit = options.Limit.GetValueOrDefault(0);
+        int offset = options.Offset.GetValueOrDefault(0);
 
-        return (string nextLink) => Task.FromResult<(string?, IEnumerable<T>)>(("", []));
+        string? nextUri = resource;
+        GraphInterfaceListResponse<T> response;
 
-        Func<string, Task<(string?, IEnumerable<T>)>> ConsolidatedResult(IEnumerable<T>? result = null)
+        do
         {
-            return (string _) => Task.FromResult<(string?, IEnumerable<T>)>((null, result ?? []));
+            response = await Unit<GraphInterfaceListResponse<T>>(nextUri, unitOptions);
+
+            if (index >= offset) yield return response.Value;
+
+            nextUri = response.NextLink;
+
+            index++;
+        } while (!string.IsNullOrEmpty(nextUri) && !hasFinished(index));
+
+        bool hasFinished(int index)
+        {
+            if (options.Limit == null) return false;
+
+            return (index - offset) == limit;
         }
     }
     private void Catch(HttpResponseMessage response, string responseString)
