@@ -1,7 +1,5 @@
-namespace GraphInterface.Options
+namespace GraphInterface.Options;
+public class GraphInterfaceAccessTokenOptions
 {
-    public class GraphInterfaceAccessTokenOptions
-    {
-        public bool UseCache { get; set; } = true;
-    }
+    public bool UseCache { get; set; } = true;
 }

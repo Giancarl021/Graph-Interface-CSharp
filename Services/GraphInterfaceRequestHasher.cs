@@ -3,27 +3,25 @@ using System.Text;
 using GraphInterface.Models.Abstract;
 using Newtonsoft.Json;
 
-namespace GraphInterface.Services
+namespace GraphInterface.Services;
+internal static class GraphInterfaceRequestHasher
 {
-    internal class GraphInterfaceRequestHasher
+    public static string Hash(string uri, GraphInterfaceRequestOptions options)
     {
-        public static string Hash(string uri, GraphInterfaceRequestOptions options)
+        string data = uri + "::" + JsonConvert.SerializeObject(options);
+
+        using (HashAlgorithm hash = SHA1.Create())
         {
-            string data = uri + "::" + JsonConvert.SerializeObject(options);
+            byte[] bytes = hash.ComputeHash(Encoding.UTF8.GetBytes(data));
 
-            using (HashAlgorithm hash = SHA1.Create())
+            StringBuilder builder = new StringBuilder();
+
+            foreach (byte b in bytes)
             {
-                byte[] bytes = hash.ComputeHash(Encoding.UTF8.GetBytes(data));
-
-                StringBuilder builder = new StringBuilder();
-
-                foreach (byte b in bytes)
-                {
-                    builder.Append(b.ToString("x2"));
-                }
-
-                return builder.ToString();
+                builder.Append(b.ToString("x2"));
             }
+
+            return builder.ToString();
         }
     }
 }

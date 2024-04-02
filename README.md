@@ -52,6 +52,8 @@ public class GraphInterfaceCredentials
     public string TenantId { get; set; }
     public string ClientId { get; set; }
     public string ClientSecret { get; set; }
+
+    public GraphInterfaceCredentials(string tenantId, string clientId, string clientSecret);
 }
 ```
 
@@ -67,7 +69,7 @@ The class looks like this:
 public class GraphInterfaceOptions
 {
     public string Version { get; set; } = "v1.0";
-    public Func<GraphInterfaceCredentials, Task<GraphInterfaceAccessTokenResponse>> AuthenticationProvider { get; set; } = null;
+    public Func<GraphInterfaceCredentials, Task<GraphInterfaceAccessTokenResponse>>? AuthenticationProvider { get; set; } = null;
     public ILogger Logger { get; set; } = NullLogger.Instance;
     public HttpClient HttpClient { get; set; } = new HttpClient();
     public IGraphInterfaceCacheService CacheService { get; set; } = new GraphInterfaceMemoryCacheService();
@@ -85,6 +87,8 @@ public class GraphInterfaceOptions
 ## Methods
 
 * [GetAccessToken](docs/GetAccessToken.md) - Get the access token to use the Graph API, used most internally, but if you need for a custom request, you can get it from here;
+* [Raw](docs/Raw.md) - Makes requests that returns non-JSON responses, returning a `StreamContent` instead;
 * [Unit](docs/Unit.md) - Makes requests that returns only a single entity;
 * [List](docs/List.md) - Makes requests that returns a list of entities, paginated using the `@odata.nextLink` property;
 * [Massive](docs/Massive.md) - Makes batch requests based on a template URL and a list of values to interpolate, generating a lot of similar requests.
+* [GetListGenerator](docs/GetListGenerator.md) - Creates a `AsyncEnumerable` that will make requests to the Graph API, paginating the results using the `@odata.nextLink` property, allowing the caller to control how the pages are threated.

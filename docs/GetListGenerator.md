@@ -1,12 +1,14 @@
-# List
+# GetListGenerator
 
-This method allows you to paginate between a list of entities, like in [`users`](https://docs.microsoft.com/pt-br/graph/api/user-list).
+This method is similar to the [List](List.md) method, but instead of returning a `IEnumerable` of `T`, it returns a `IAsyncEnumerable` of `IEnumerable` of `T`, allowing the caller to control how the pages are threated.
+
+It allows you to paginate between a list of entities, like in [`users`](https://docs.microsoft.com/pt-br/graph/api/user-list).
 
 ## Signatures
 
 ```csharp
-public async Task<IEnumerable<T>> List<T>(string resource) where T : class;
-public async Task<IEnumerable<T>> List<T>(string resource, GraphInterfaceListOptions options) where T : class;
+public IAsyncEnumerable<IEnumerable<T>> CreateListGenerator<T>(string resource) where T : class;
+public async IAsyncEnumerable<IEnumerable<T>> CreateListGenerator<T>(string resource, GraphInterfaceListGeneratorOptions options) where T : class;
 ```
 
 ## Parameters
@@ -17,23 +19,22 @@ The resource on the Graph API to retrieve, like `users`.
 
 This parameter is required, and will concatenate with the full endpoint in the Graph API, allowing you to write query parameters like `$select` and `$filter`.
 
-### (Optional) `GraphInterfaceListOptions options`
+### (Optional) `GraphInterfaceListGeneratorOptions options`
 
 Dictates the behavior of the list request. Such as Headers, Body, Method, if the response should be cached and the limit and offset of the pagination.
 
 This class extends the [`GraphInterfaceRequestOptions`](RequestOptions.md) class.
 
 ```csharp
-public class GraphInterfaceListOptions : GraphInterfaceRequestOptions
+public class GraphInterfaceListGeneratorOptions : GraphInterfaceRequestOptions
 {
     public int? Limit { get; set; } = null;
     public int? Offset { get; set; } = null;
-    public bool UseCache { get; set; } = false;
     // (Internal methods hidden) ...
 }
 ```
 
-* **UseCache** - If `true`, the response will be cached using the `IGraphInterfaceCacheService` service initialized with the client. Default `false`;
+> **Important:** You may have noticed that the `UseCache` property is missing from this class. This is because of the nature of the method, the flow of the data is controlled by the caller, so managing the return data is in the responsibility of the caller by principal.
 
 ## How `Limit` and `Offset` works
 
@@ -55,7 +56,7 @@ When you set both `Limit` and `Offset`, the number of requests will now be `Limi
 This is important because now the `Limit` does **NOT** represents the total of requests.
 ## Returns
 
-A Task, that when resolved will return a `IEnumerable` of `T` with the response from the Graph API. Note that under the hood, the response is parsed using the [Newtonsoft.Json](https://www.nuget.org/packages/Newtonsoft.Json/) `JsonConvert.DeserializeObject<T>` method, so, to get a better formed class, you can use the `[JsonProperty("propertyName")]` attribute on the properties you want to use.
+A `AsyncEnumerable` of an `IEnumerable` of `T` with each iteration coming from the Graph API. The items will be returned by page, and when a new page is needed, the caller can decide to continue or not, making the process transparent.
 
 In this case, the original response bodies will be shaped like this:
 

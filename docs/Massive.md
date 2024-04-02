@@ -39,10 +39,13 @@ public class GraphInterfaceMassiveOptions : GraphInterfaceRequestOptions
     public uint Attempts { get; set; } = 3;
     public uint RequestsPerAttempt { get; set; } = 50;
     public bool NullifyErrors = false;
+    public bool UseCache { get; set; } = false;
 
     // (Internal methods hidden) ...
 }
 ```
+
+* **UseCache** - If `true`, the response will be cached using the `IGraphInterfaceCacheService` service initialized with the client. Default `false`;
 
 ## Data interpolation
 
