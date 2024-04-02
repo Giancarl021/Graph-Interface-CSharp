@@ -14,6 +14,7 @@ using GraphInterface.Services;
 using GraphInterface.Models.Helpers;
 using Newtonsoft.Json.Linq;
 using System.Xml.XPath;
+using System.IO;
 
 namespace GraphInterface;
 
@@ -99,8 +100,8 @@ public class GraphInterfaceClient
     {
         UseCache = _options.CacheAccessTokenByDefault
     });
-    public async Task<string> Raw(string resource) => await Raw(resource, new GraphInterfaceRawOptions());
-    public async Task<string> Raw(string resource, GraphInterfaceRawOptions options)
+    public async Task<StreamContent> Raw(string resource) => await Raw(resource, new GraphInterfaceRawOptions());
+    public async Task<StreamContent> Raw(string resource, GraphInterfaceRawOptions options)
     {
         if (string.IsNullOrWhiteSpace(resource))
         {
@@ -131,13 +132,29 @@ public class GraphInterfaceClient
 
         _options.Logger.LogDebug("Sending raw request");
         var response = await _options.HttpClient.SendAsync(request);
-        string responseString = await response.Content.ReadAsStringAsync();
+
+        var responseData = await response.Content.ReadAsStreamAsync();
+
+        string? responseString;
+
+        try
+        {
+            responseString = await new StreamReader(responseData).ReadToEndAsync();
+        }
+        catch
+        {
+            responseString = null;
+        }
+
+        responseData.Seek(0, SeekOrigin.Begin);
 
         Catch(response, responseString);
 
         _options.Logger.LogDebug("Returning raw response");
 
-        return responseString;
+        var result = new StreamContent(responseData);
+
+        return result;
     }
     public async Task<T> Unit<T>(string resource, GraphInterfaceUnitOptions options) where T : class
     {
@@ -154,7 +171,8 @@ public class GraphInterfaceClient
             }
         }
 
-        string responseString = await Raw(resource, options.ToRawOptions());
+        var response = await Raw(resource, options.ToRawOptions());
+        string responseString = await response.ReadAsStringAsync();
 
         _options.Logger.LogDebug("Deserializing unit response");
 
@@ -460,7 +478,7 @@ public class GraphInterfaceClient
             return (index - offset) == limit;
         }
     }
-    private void Catch(HttpResponseMessage response, string responseString)
+    private void Catch(HttpResponseMessage response, string? responseString)
     {
         if (!response.IsSuccessStatusCode)
         {

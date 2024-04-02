@@ -19,7 +19,7 @@ The resource on the Graph API to retrieve, like `users`.
 
 This parameter is required, and will concatenate with the full endpoint in the Graph API, allowing you to write query parameters like `$select` and `$filter`.
 
-### (Optional) `GraphInterfaceListOptions options`
+### (Optional) `GraphInterfaceListGeneratorOptions options`
 
 Dictates the behavior of the list request. Such as Headers, Body, Method, if the response should be cached and the limit and offset of the pagination.
 

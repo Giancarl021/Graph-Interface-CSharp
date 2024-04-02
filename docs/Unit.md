@@ -27,6 +27,8 @@ This class extends the [`GraphInterfaceRequestOptions`](RequestOptions.md) class
 public class GraphInterfaceUnitOptions : GraphInterfaceRequestOptions
 {
     public bool UseCache { get; set; } = false;
+
+    // (Internal methods hidden) ...
 }
 ```
 

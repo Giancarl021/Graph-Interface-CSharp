@@ -87,6 +87,7 @@ public class GraphInterfaceOptions
 ## Methods
 
 * [GetAccessToken](docs/GetAccessToken.md) - Get the access token to use the Graph API, used most internally, but if you need for a custom request, you can get it from here;
+* [Raw](docs/Raw.md) - Makes requests that returns non-JSON responses, returning a `StreamContent` instead;
 * [Unit](docs/Unit.md) - Makes requests that returns only a single entity;
 * [List](docs/List.md) - Makes requests that returns a list of entities, paginated using the `@odata.nextLink` property;
 * [Massive](docs/Massive.md) - Makes batch requests based on a template URL and a list of values to interpolate, generating a lot of similar requests.
