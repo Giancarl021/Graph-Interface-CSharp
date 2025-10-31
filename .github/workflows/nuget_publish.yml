@@ -16,6 +16,6 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.x'
-      - run: 'dotnet publish --configuration Release Graph-Interface-CSharp.csproj'
-      - run: 'dotnet pack --configuration Release Graph-Interface-CSharp.csproj'
+      - run: 'dotnet publish --configuration Release GraphInterface.csproj'
+      - run: 'dotnet pack --configuration Release GraphInterface.csproj'
       - run: 'dotnet nuget push **/bin/Release/*.nupkg --source "https://api.nuget.org/v3/index.json" --api-key ${{ secrets.NUGET_API_KEY }}'
