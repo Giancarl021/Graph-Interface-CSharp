@@ -1,0 +1,22 @@
+name: Package Publish
+
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    environment: Nuget Publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+      - run: 'dotnet test'
+      - run: 'dotnet publish --configuration Release Graph-Interface-CSharp.csproj'
+      - run: 'dotnet pack --configuration Release Graph-Interface-CSharp.csproj'
+      - run: 'dotnet nuget push **/bin/Release/*.nupkg --source "https://api.nuget.org/v3/index.json" --api-key ${{ secrets.NUGET_API_KEY }}'
