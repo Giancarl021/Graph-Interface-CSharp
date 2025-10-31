@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace GraphInterface.Models.Helpers;
 internal class GraphInterfaceBatchRequestBody
 {
-    [JsonProperty("requests")]
+    [JsonPropertyName("requests")]
     public IEnumerable<GraphInterfaceBatchRequestItem> Requests;
     public GraphInterfaceBatchRequestBody(IEnumerable<GraphInterfaceBatchRequestItem> requests)
     {

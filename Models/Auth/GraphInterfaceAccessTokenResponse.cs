@@ -1,24 +1,24 @@
 using System;
+using System.Text.Json.Serialization;
 using GraphInterface.Services.Converters;
-using Newtonsoft.Json;
 
 namespace GraphInterface.Auth;
 public class GraphInterfaceAccessTokenResponse
 {
-    [JsonProperty("access_token")]
+    [JsonPropertyName("access_token")]
     public string AccessToken { get; set; } = string.Empty;
-    [JsonProperty("refresh_token")]
+    [JsonPropertyName("refresh_token")]
     public string RefreshToken { get; set; } = string.Empty;
-    [JsonProperty("expires_in")]
+    [JsonPropertyName("expires_in")]
     [JsonConverter(typeof(TimeSpanJsonConverter))]
     public TimeSpan ExpiresIn { get; set; } = TimeSpan.Zero;
-    [JsonProperty("ext_expires_in")]
+    [JsonPropertyName("ext_expires_in")]
     [JsonConverter(typeof(TimeSpanJsonConverter))]
     public TimeSpan ExtExpiresIn { get; set; } = TimeSpan.Zero;
-    [JsonProperty("expires_on")]
+    [JsonPropertyName("expires_on")]
     public DateTime ExpiresOn { get; set; } = DateTime.MinValue;
-    [JsonProperty("not_before")]
+    [JsonPropertyName("not_before")]
     public DateTime NotBefore { get; set; } = DateTime.MinValue;
-    [JsonProperty("resource")]
+    [JsonPropertyName("resource")]
     public string Resource { get; set; } = string.Empty;
 }

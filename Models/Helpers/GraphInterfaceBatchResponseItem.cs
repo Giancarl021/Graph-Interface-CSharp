@@ -1,16 +1,16 @@
 using System.Collections.Generic;
 using System.Net;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace GraphInterface.Models.Helpers;
 internal class GraphInterfaceBatchResponseItem(string id)
 {
-    [JsonProperty("id")]
+    [JsonPropertyName("id")]
     public string Id { get; set; } = id;
-    [JsonProperty("status")]
+    [JsonPropertyName("status")]
     public HttpStatusCode StatusCode { get; set; }
-    [JsonProperty("headers")]
+    [JsonPropertyName("headers")]
     public Dictionary<string, string> Headers { get; set; } = [];
-    [JsonProperty("body")]
+    [JsonPropertyName("body")]
     public object? Body { get; set; } = null;
 }

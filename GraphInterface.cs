@@ -6,15 +6,14 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Throttle;
 using GraphInterface.Auth;
 using GraphInterface.Options;
 using GraphInterface.Services;
 using GraphInterface.Models.Helpers;
-using Newtonsoft.Json.Linq;
 using System.Xml.XPath;
 using System.IO;
+using System.Text.Json;
 
 namespace GraphInterface;
 
@@ -85,7 +84,7 @@ public class GraphInterfaceClient
 
         Catch(response, responseString);
 
-        var token = JsonConvert.DeserializeObject<GraphInterfaceAccessTokenResponse>(responseString)!;
+        var token = JsonSerializer.Deserialize<GraphInterfaceAccessTokenResponse>(responseString)!;
 
         if (options.UseCache)
         {
@@ -125,7 +124,7 @@ public class GraphInterfaceClient
 
         if (options.Body != null)
             request.Content = new StringContent(
-                JsonConvert.SerializeObject(options.Body),
+                JsonSerializer.Serialize(options.Body),
                 Encoding.UTF8,
                 "application/json"
             );
@@ -176,7 +175,7 @@ public class GraphInterfaceClient
 
         _options.Logger.LogDebug("Deserializing unit response");
 
-        T result = JsonConvert.DeserializeObject<T>(responseString)!;
+        T result = JsonSerializer.Deserialize<T>(responseString)!;
 
         if (options.UseCache)
         {
@@ -317,7 +316,10 @@ public class GraphInterfaceClient
 
             foreach (var item in result.Resolved)
             {
-                results.Add(item.Id, JObject.FromObject(item.Body!).ToObject<T>()!);
+                results.Add(
+                    item.Id,
+                    JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(item.Body))!
+                );
             }
 
             if (resources.Count == result.Rejected.Count)
@@ -378,7 +380,7 @@ public class GraphInterfaceClient
                 var requestBlock = skipped.Take(Math.Min(BATCH_REQUEST_SIZE, skipped.Count()));
 
                 request.Content = new StringContent(
-                    JsonConvert.SerializeObject(new GraphInterfaceBatchRequestBody(requestBlock)),
+                    JsonSerializer.Serialize(new GraphInterfaceBatchRequestBody(requestBlock)),
                     Encoding.UTF8,
                     "application/json"
                 );
@@ -398,7 +400,7 @@ public class GraphInterfaceClient
                     }
 
                     string responseString = await response.Content.ReadAsStringAsync();
-                    var data = JsonConvert.DeserializeObject<GraphInterfaceBatchResponse>(responseString);
+                    var data = JsonSerializer.Deserialize<GraphInterfaceBatchResponse>(responseString);
 
                     if (data == null)
                         return new GraphInterfaceBatchResponse

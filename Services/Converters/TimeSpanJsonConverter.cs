@@ -1,20 +1,19 @@
 using System;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace GraphInterface.Services.Converters
 {
     internal class TimeSpanJsonConverter : JsonConverter<TimeSpan>
     {
-        public override TimeSpan ReadJson(JsonReader reader, Type objectType, TimeSpan existingValue, bool hasExistingValue, JsonSerializer serializer)
+        public override TimeSpan Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            if (!hasExistingValue)
-                return TimeSpan.Zero;
-
-            return reader.Value != null ? TimeSpan.FromSeconds(int.Parse(reader.Value!.ToString()!)) : TimeSpan.Zero;
+            var value = reader.GetInt32();
+            return TimeSpan.FromSeconds(value);
         }
-        public override void WriteJson(JsonWriter writer, TimeSpan value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, TimeSpan value, JsonSerializerOptions options)
         {
-            writer.WriteValue(value.TotalSeconds.ToString());
+            writer.WriteNumberValue(Math.Floor(value.TotalSeconds));
         }
     }
 }

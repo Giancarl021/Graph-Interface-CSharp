@@ -36,4 +36,4 @@ public class GraphInterfaceUnitOptions : GraphInterfaceRequestOptions
 
 ## Returns
 
-A Task, that when resolved will return an instance of `T` with the response from the Graph API. Note that under the hood, the response is parsed using the [Newtonsoft.Json](https://www.nuget.org/packages/Newtonsoft.Json/) `JsonConvert.DeserializeObject<T>` method, so, to get a better formed class, you can use the `[JsonProperty("propertyName")]` attribute on the properties you want to use.
+A Task, that when resolved will return an instance of `T` with the response from the Graph API. Note that under the hood, the response is parsed using the `System.Text.Json.JsonSerializer` `JsonConvert.DeserializeObject<T>` method, so, to get a better formed class, you can use the `[JsonPropertyName("propertyName")]` attribute on the properties you want to use.

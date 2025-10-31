@@ -2,21 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Http;
+using System.Text.Json.Serialization;
 using GraphInterface.Services.Converters;
-using Newtonsoft.Json;
 
 namespace GraphInterface.Models.Helpers;
 internal class GraphInterfaceBatchRequestItem(string id, Uri url, HttpMethod method)
 {
-    [JsonProperty("headers", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("headers")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, string>? Headers { get; set; }
-    [JsonProperty("url")]
+    [JsonPropertyName("url")]
     public Uri Url { get; set; } = url;
-    [JsonProperty("method")]
+    [JsonPropertyName("method")]
     [JsonConverter(typeof(HttpMethodJsonConverter))]
     public HttpMethod Method { get; set; } = method;
-    [JsonProperty("id")]
+    [JsonPropertyName("id")]
     public string Id { get; set; } = id;
-    [JsonProperty("body", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("body")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public object? Body { get; set; }
 }
