@@ -19,4 +19,11 @@ public class GraphInterfaceCredentials
         if (string.IsNullOrWhiteSpace(ClientSecret))
             throw new ArgumentException("ClientSecret is required");
     }
+    private GraphInterfaceCredentials()
+    {
+        TenantId = string.Empty;
+        ClientId = string.Empty;
+        ClientSecret = string.Empty;
+    }
+    public static GraphInterfaceCredentials Empty { get; } = new();
 }
